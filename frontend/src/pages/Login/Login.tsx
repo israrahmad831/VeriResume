@@ -18,9 +18,15 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Login failed');
-  login(data.token);
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        const text = await res.text();
+        throw new Error(text || 'Login failed');
+      }
+      if (!res.ok) throw new Error(data?.message || 'Login failed');
+      login(data.token);
   // use full reload to ensure app reads new auth state
   window.location.replace('/');
     } catch (err: unknown) {
@@ -46,7 +52,7 @@ const Login = () => {
       </form>
 
       <div style={{ marginTop: 12 }}>
-        <a href="/auth/google"><button>Sign in with Google</button></a>
+        <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/google`}><button>Sign in with Google</button></a>
       </div>
     </div>
   );

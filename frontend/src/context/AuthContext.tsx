@@ -24,7 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     try {
-      const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const res = await fetch(`${apiBase}/api/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       setUser({ id: data.id, email: data.email, name: data.name, avatar: data.avatar });

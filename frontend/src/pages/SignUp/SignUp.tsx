@@ -14,14 +14,21 @@ const SignUp = () => {
     e.preventDefault();
     setError('');
     try {
-      const res = await fetch('/auth/signup', {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const res = await fetch(`${apiBase}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Signup failed');
-  login(data.token);
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        const text = await res.text();
+        throw new Error(text || 'Signup failed');
+      }
+      if (!res.ok) throw new Error(data?.message || 'Signup failed');
+      login(data.token);
   window.location.replace('/');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -50,7 +57,7 @@ const SignUp = () => {
       </form>
 
       <div style={{ marginTop: 12 }}>
-        <a href="/auth/google"><button>Sign up with Google</button></a>
+        <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/google`}><button>Sign up with Google</button></a>
       </div>
     </div>
   );
