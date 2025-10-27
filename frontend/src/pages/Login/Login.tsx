@@ -42,42 +42,46 @@ const Login = () => {
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: "2rem auto" }}>
-      <h2>Login</h2>
-      <form onSubmit={submit}>
+    <div className="max-w-md mx-auto mt-8 p-6">
+      <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
+      <form onSubmit={submit} className="space-y-4">
         <div>
-          <label>Email</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} />
+          <label className="block text-sm font-medium mb-1">Email</label>
+          <input 
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+          />
         </div>
         <div>
-          <label>Password</label>
+          <label className="block text-sm font-medium mb-1">Password</label>
           <input
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-        {error && <div style={{ color: "red" }}>{error}</div>}
-        <button type="submit">Login</button>
+        {error && <div className="text-red-600 text-sm">{error}</div>}
+        <button 
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Login
+        </button>
       </form>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="mt-4 text-center">
         <button
           type="button"
           onClick={() => navigate('/forgot-password')}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: "#007bff",
-            cursor: "pointer",
-            textDecoration: "underline",
-          }}
+          className="text-blue-600 hover:underline text-sm"
         >
           Forgot Password?
         </button>
       </div>
 
-      <div style={{ marginTop: 12 }}>
+      <div className="mt-4">
         <button
           type="button"
           onClick={() => {
@@ -85,6 +89,7 @@ const Login = () => {
               import.meta.env.VITE_API_URL || "http://localhost:3000";
             window.location.href = `${apiUrl}/auth/google`;
           }}
+          className="w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
         >
           Sign in with Google
         </button>
