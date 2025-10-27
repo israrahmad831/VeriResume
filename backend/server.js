@@ -9,12 +9,37 @@ import session from 'express-session';
 import setupPassport from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
+import User from './models/User.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 connectDB();
+
+// Seed admin on server start
+const seedAdmin = async () => {
+  try {
+    const adminEmail = 'admin@veriresume.com';
+    const exists = await User.findOne({ email: adminEmail });
+    if (!exists) {
+      await User.create({
+        name: 'Demo Admin',
+        email: adminEmail,
+        password: 'AdminDemo123!',
+        role: 'admin',
+        isEmailVerified: true,
+      });
+      console.log('✅ Demo admin created:', adminEmail);
+    } else {
+      console.log('✅ Demo admin already exists:', adminEmail);
+    }
+  } catch (err) {
+    console.error('Error seeding admin:', err);
+  }
+};
+
+seedAdmin();
 
 app.use(session({ secret: process.env.SESSION_SECRET || 'sesssecret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());

@@ -1,3 +1,34 @@
+// Get current user info from JWT
+export const getMe = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Set role for user after Google sign-in
+export const setRole = async (req, res) => {
+  try {
+    const userId = req.user?.id || req.user?._id;
+    const { role } = req.body;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    if (!role || !["jobseeker", "hr"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    user.role = role;
+    await user.save();
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { generateOTP, sendOTPEmail, sendPasswordResetEmail } from '../utils/emailService.js';
@@ -5,7 +36,7 @@ import { generateOTP, sendOTPEmail, sendPasswordResetEmail } from '../utils/emai
 const getJwtSecret = () => process.env.JWT_SECRET || 'devsecret';
 
 export const signup = async (req, res) => {
-  const { email, password, name } = req.body;
+  const { email, password, name, role } = req.body;
   try {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: 'User already exists' });
@@ -18,6 +49,7 @@ export const signup = async (req, res) => {
       email, 
       password, 
       name,
+      role: role || "jobseeker",
       emailVerificationOTP: otp,
       otpExpires: otpExpires,
       isEmailVerified: false

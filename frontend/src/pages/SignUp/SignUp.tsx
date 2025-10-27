@@ -5,6 +5,7 @@ const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState<'jobseeker' | 'hr'>('jobseeker');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -16,7 +17,7 @@ const SignUp = () => {
       const res = await fetch(`${apiBase}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name }),
+        body: JSON.stringify({ email, password, name, role }),
       });
       const data = await res.json();
       
@@ -47,6 +48,13 @@ const SignUp = () => {
         <div>
           <label>Password</label>
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
+        <div>
+          <label>Register as:</label>
+          <select value={role} onChange={e => setRole(e.target.value as 'jobseeker' | 'hr')}>
+            <option value="jobseeker">Job Seeker</option>
+            <option value="hr">HR</option>
+          </select>
         </div>
         {error && <div style={{ color: 'red' }}>{error}</div>}
         <button type="submit">Sign Up</button>

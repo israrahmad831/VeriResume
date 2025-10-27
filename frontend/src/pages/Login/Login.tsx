@@ -32,9 +32,15 @@ const Login = () => {
       
       login(data.token);
       localStorage.setItem("token", data.token);
-      setTimeout(() => {
-        window.location.replace("/");
-      }, 100);
+      // Redirect based on role
+      const role = data.user?.role || "jobseeker";
+      if (role === "hr") {
+        navigate("/dashboardhr");
+      } else if (role === "admin") {
+        navigate("/dashboardadmin");
+      } else {
+        navigate("/dashboardjob");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);

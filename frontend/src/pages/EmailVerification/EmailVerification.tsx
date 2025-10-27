@@ -49,8 +49,16 @@ const EmailVerification = () => {
       login(data.token);
       localStorage.setItem("token", data.token);
       
+      // Redirect to role-based dashboard
+      const role = data.user?.role || "jobseeker";
       setTimeout(() => {
-        navigate("/");
+        if (role === "hr") {
+          navigate("/dashboardhr");
+        } else if (role === "admin") {
+          navigate("/dashboardadmin");
+        } else {
+          navigate("/dashboardjob");
+        }
       }, 1000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

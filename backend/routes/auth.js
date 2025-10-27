@@ -9,10 +9,16 @@ import {
   resendOTP,
   forgotPassword,
   resetPassword,
+  getMe,
+  setRole
 } from "../controllers/authController.js";
 
 const router = express.Router();
 
+// JWT middleware for protected routes
+const jwtAuth = passport.authenticate("jwt", { session: false });
+
+// Public routes
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/verify-email", verifyEmail);
@@ -20,6 +26,11 @@ router.post("/resend-otp", resendOTP);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 
+// Protected routes (require JWT)
+router.get("/me", jwtAuth, getMe);
+router.post("/set-role", jwtAuth, setRole);
+
+// Google OAuth routes
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })

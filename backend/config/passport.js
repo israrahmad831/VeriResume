@@ -1,5 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as JWTStrategy } from 'passport-jwt';
 import User from '../models/User.js';
 
 export default function setupPassport() {
@@ -12,6 +13,26 @@ export default function setupPassport() {
       done(err);
     }
   });
+
+  // JWT Strategy for protected routes
+  passport.use(new JWTStrategy({
+    jwtFromRequest: (req) => {
+      const auth = req.headers.authorization;
+      if (auth && auth.startsWith('Bearer ')) {
+        return auth.substring(7);
+      }
+      return null;
+    },
+    secretOrKey: process.env.JWT_SECRET || 'devsecret'
+  }, async (jwtPayload, done) => {
+    try {
+      const user = await User.findById(jwtPayload.id);
+      if (!user) return done(null, false);
+      return done(null, user);
+    } catch (err) {
+      return done(err, false);
+    }
+  }));
 
   // Only set up Google strategy if credentials are provided
   const googleId = process.env.GOOGLE_CLIENT_ID;
