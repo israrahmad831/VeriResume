@@ -7,6 +7,11 @@ const UserSchema = new mongoose.Schema({
   googleId: { type: String },
   name: { type: String },
   avatar: { type: String },
+  isEmailVerified: { type: Boolean, default: false },
+  emailVerificationOTP: { type: String },
+  otpExpires: { type: Date },
+  resetPasswordOTP: { type: String },
+  resetPasswordOTPExpires: { type: Date },
 }, { timestamps: true });
 
 UserSchema.pre('save', async function(next) {

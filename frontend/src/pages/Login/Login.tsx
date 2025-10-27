@@ -19,28 +19,20 @@ const Login = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      let data: any = null;
-      try {
-        data = await res.json();
-      } catch (parseErr) {
-        const text = await res.text();
-        throw new Error(text || "Login failed");
+      const data = await res.json();
+      
+      if (!res.ok) {
+        // Check if email verification is required
+        if (res.status === 403 && data.requiresVerification) {
+          navigate('/verify-email', { state: { email: data.email } });
+          return;
+        }
+        throw new Error(data?.message || "Login failed");
       }
-      if (!res.ok) throw new Error(data?.message || "Login failed");
-      console.log(
-        "[Login] Login successful, token received:",
-        data.token ? `${data.token.substring(0, 20)}...` : "null"
-      );
-      console.log("[Login] Calling login(token)...");
+      
       login(data.token);
-      console.log(
-        "[Login] login() called, now storing in localStorage directly as backup"
-      );
       localStorage.setItem("token", data.token);
-      console.log("[Login] Token stored, about to redirect");
-      // Small delay to ensure storage completes
       setTimeout(() => {
-        console.log("[Login] Redirecting to /");
         window.location.replace("/");
       }, 100);
     } catch (err: unknown) {
@@ -72,13 +64,25 @@ const Login = () => {
       <div style={{ marginTop: 12 }}>
         <button
           type="button"
+          onClick={() => navigate('/forgot-password')}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#007bff",
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          Forgot Password?
+        </button>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <button
+          type="button"
           onClick={() => {
             const apiUrl =
               import.meta.env.VITE_API_URL || "http://localhost:3000";
-            console.log(
-              "[Login] Opening Google OAuth at:",
-              `${apiUrl}/auth/google`
-            );
             window.location.href = `${apiUrl}/auth/google`;
           }}
         >

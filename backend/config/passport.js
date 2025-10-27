@@ -18,11 +18,7 @@ export default function setupPassport() {
   const googleSecret = process.env.GOOGLE_CLIENT_SECRET;
   const googleCallback = process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback';
 
-  console.log('[Passport] Google Client ID:', googleId ? 'SET' : 'NOT SET');
-  console.log('[Passport] Google Client Secret:', googleSecret ? 'SET' : 'NOT SET');
-
   if (googleId && googleSecret) {
-    console.log('[Passport] Registering Google OAuth strategy...');
     passport.use(new GoogleStrategy({
       clientID: googleId,
       clientSecret: googleSecret,
@@ -42,25 +38,24 @@ export default function setupPassport() {
             user.googleId = profile.id;
             user.name = user.name || profile.displayName;
             user.avatar = user.avatar || profile.photos?.[0]?.value;
+            user.isEmailVerified = true; // Auto-verify Google users
             await user.save();
             return done(null, user);
           }
         }
 
-        // Otherwise create new user
+        // Otherwise create new user (auto-verified for Google OAuth)
         user = await User.create({
           googleId: profile.id,
           email,
           name: profile.displayName,
           avatar: profile.photos?.[0]?.value,
+          isEmailVerified: true, // Auto-verify Google users
         });
         done(null, user);
       } catch (err) {
         done(err);
       }
     }));
-    console.log('[Passport] Google OAuth strategy registered successfully!');
-  } else {
-    console.warn('Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.');
   }
 }
