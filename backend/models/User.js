@@ -1,29 +1,47 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
-const UserSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String },
-  googleId: { type: String },
-  name: { type: String },
-  avatar: { type: String },
-  isEmailVerified: { type: Boolean, default: false },
-  emailVerificationOTP: { type: String },
-  otpExpires: { type: Date },
-  resetPasswordOTP: { type: String },
-  resetPasswordOTPExpires: { type: Date },
-}, { timestamps: true });
+const UserSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String },
+    googleId: { type: String },
+    linkedinId: { type: String },
+    avatar: { type: String },
+    role: {
+      type: String,
+      enum: ["jobseeker", "hr", "admin"],
+      default: "jobseeker",
+    },
+    company: { type: String }, // For HR
+    isEmailVerified: { type: Boolean, default: false },
 
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+    // OTPs
+    emailVerificationOTP: { type: String },
+    otpExpires: { type: Date },
+    resetPasswordOTP: { type: String },
+    resetPasswordOTPExpires: { type: Date },
+
+    // Premium / Subscription info
+    isPremium: { type: Boolean, default: false },
+    premiumExpiresAt: { type: Date },
+  },
+  { timestamps: true }
+);
+
+// Encrypt password
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-UserSchema.methods.comparePassword = function(candidate) {
+// Compare password
+UserSchema.methods.comparePassword = function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model("User", UserSchema);
 export default User;
