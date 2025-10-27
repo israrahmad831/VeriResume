@@ -18,7 +18,11 @@ export default function setupPassport() {
   const googleSecret = process.env.GOOGLE_CLIENT_SECRET;
   const googleCallback = process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback';
 
+  console.log('[Passport] Google Client ID:', googleId ? 'SET' : 'NOT SET');
+  console.log('[Passport] Google Client Secret:', googleSecret ? 'SET' : 'NOT SET');
+
   if (googleId && googleSecret) {
+    console.log('[Passport] Registering Google OAuth strategy...');
     passport.use(new GoogleStrategy({
       clientID: googleId,
       clientSecret: googleSecret,
@@ -55,6 +59,7 @@ export default function setupPassport() {
         done(err);
       }
     }));
+    console.log('[Passport] Google OAuth strategy registered successfully!');
   } else {
     console.warn('Google OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.');
   }
