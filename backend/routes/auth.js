@@ -44,10 +44,12 @@ router.get("/google/callback", (req, res, next) => {
     // Create JWT and redirect to frontend success route with token
     try {
       const jwtSecret = process.env.JWT_SECRET || "devsecret";
+      console.log('[auth.js Google callback] Creating token with secret length:', jwtSecret.length);
       const token = jwt.sign({ id: user._id }, jwtSecret, { expiresIn: "7d" });
       const url = `${frontend}${successPath}?token=${encodeURIComponent(
         token
       )}`;
+      console.log('[auth.js Google callback] Redirecting to:', url.substring(0, 80) + '...');
       return res.redirect(url);
     } catch (ex) {
       console.error("Error creating JWT after OAuth:", ex);

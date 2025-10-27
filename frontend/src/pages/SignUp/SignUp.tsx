@@ -28,8 +28,16 @@ const SignUp = () => {
         throw new Error(text || 'Signup failed');
       }
       if (!res.ok) throw new Error(data?.message || 'Signup failed');
+      console.log('[SignUp] Signup successful, token received:', data.token ? `${data.token.substring(0, 20)}...` : 'null');
+      console.log('[SignUp] Calling login(token)...');
       login(data.token);
-  window.location.replace('/');
+      console.log('[SignUp] login() called, storing directly as backup');
+      localStorage.setItem('token', data.token);
+      console.log('[SignUp] Token stored, about to redirect');
+      setTimeout(() => {
+        console.log('[SignUp] Redirecting to /');
+        window.location.replace('/');
+      }, 100);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -57,7 +65,11 @@ const SignUp = () => {
       </form>
 
       <div style={{ marginTop: 12 }}>
-        <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/google`}><button>Sign up with Google</button></a>
+        <button type="button" onClick={() => {
+          const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+          console.log('[SignUp] Opening Google OAuth at:', `${apiUrl}/auth/google`);
+          window.location.href = `${apiUrl}/auth/google`;
+        }}>Sign up with Google</button>
       </div>
     </div>
   );

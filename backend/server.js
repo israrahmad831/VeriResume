@@ -1,14 +1,18 @@
+import dotenv from 'dotenv';
+// Load env vars FIRST before other imports that might use them
+dotenv.config();
+
+// Verify JWT_SECRET is loaded
+console.log('[Server] JWT_SECRET loaded:', process.env.JWT_SECRET ? 'YES (length: ' + process.env.JWT_SECRET.length + ')' : 'NO - using default');
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import passport from 'passport';
 import session from 'express-session';
 import setupPassport from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import apiRoutes from './routes/api.js';
-
-dotenv.config();
 
 const app = express();
 app.use(cors());
