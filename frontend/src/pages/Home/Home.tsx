@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Brain,
   FileText,
@@ -18,10 +19,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import Navbar from "../Navbar/Navbar";
 
 const Home = () => {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,6 +67,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      <Navbar />
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-blue-700 to-cyan-600 text-white">
         <div className="absolute inset-0 opacity-20">
@@ -84,10 +88,16 @@ const Home = () => {
                 opportunities.
               </p>
               <div className="flex flex-wrap gap-4">
-                <button className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50">
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50"
+                >
                   Get Started
                 </button>
-                <button className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all border border-white/30 flex items-center gap-2">
+                <button
+                  onClick={() => navigate("/login")}
+                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all border border-white/30 flex items-center gap-2"
+                >
                   <Play size={20} />
                   Watch Demo
                 </button>

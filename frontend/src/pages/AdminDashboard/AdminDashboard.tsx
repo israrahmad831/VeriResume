@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Home,
   Users,
@@ -30,6 +32,7 @@ import {
   Building2,
   CheckCircle,
   XCircle,
+  LogOut,
 } from "lucide-react";
 import {
   LineChart,
@@ -54,8 +57,15 @@ const AdminDashboard = () => {
     users: true,
     analytics: true,
   });
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const toggleMenu = (menu) => {
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const toggleMenu = (menu: string) => {
     setExpandedMenus((prev) => ({ ...prev, [menu]: !prev[menu] }));
   };
 
@@ -273,7 +283,7 @@ const AdminDashboard = () => {
         </nav>
 
         {sidebarOpen && (
-          <div className="p-4 border-t border-white/10">
+          <div className="p-4 border-t border-white/10 space-y-3">
             <div className="space-y-2">
               <button className="w-full flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl hover:from-cyan-700 hover:to-blue-700 transition-all">
                 <Send size={18} />
@@ -284,6 +294,13 @@ const AdminDashboard = () => {
                 <span className="text-sm font-semibold">Maintenance Mode</span>
               </button>
             </div>
+            <button 
+              onClick={handleLogout}
+              className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 px-4 py-3 rounded-xl transition-all flex items-center gap-2 justify-center font-semibold"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
           </div>
         )}
       </aside>

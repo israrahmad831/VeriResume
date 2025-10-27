@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import {
   Home,
   Upload,
@@ -23,11 +25,19 @@ import {
   AlertCircle,
   Zap,
   BarChart3,
+  LogOut,
 } from "lucide-react";
 
 const JobSeekerDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notifications] = useState(3);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const menuItems = [
     {
@@ -148,7 +158,7 @@ const JobSeekerDashboard = () => {
         </nav>
 
         {sidebarOpen && (
-          <div className="p-4 border-t border-white/10">
+          <div className="p-4 border-t border-white/10 space-y-3">
             <div className="bg-gradient-to-br from-cyan-600 to-blue-600 rounded-xl p-4">
               <Sparkles className="text-white mb-2" size={24} />
               <p className="text-sm font-semibold mb-1">Upgrade to Premium</p>
@@ -159,6 +169,13 @@ const JobSeekerDashboard = () => {
                 Upgrade Now
               </button>
             </div>
+            <button 
+              onClick={handleLogout}
+              className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 px-4 py-3 rounded-xl transition-all flex items-center gap-2 justify-center font-semibold"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
           </div>
         )}
       </aside>

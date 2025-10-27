@@ -86,7 +86,7 @@ const Navbar = () => {
                   Login
                 </a>
                 <a
-                  href="/register"
+                  href="/signup"
                   className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-6 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl"
                 >
                   Get Started
@@ -189,7 +189,7 @@ const Navbar = () => {
                     Login
                   </a>
                   <a
-                    href="/register"
+                    href="/signup"
                     className="block w-full text-center bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-lg"
                   >
                     Get Started
