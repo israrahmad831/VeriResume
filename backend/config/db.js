@@ -1,13 +1,18 @@
-import mysql from "mysql2";
+import mongoose from 'mongoose';
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASS || "",
-  database: process.env.DB_NAME || "veriresume",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/veriresume';
 
-export default pool;
+const connectDB = async () => {
+  try {
+    await mongoose.connect(MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log('MongoDB connected');
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+    process.exit(1);
+  }
+};
+
+export default connectDB;
