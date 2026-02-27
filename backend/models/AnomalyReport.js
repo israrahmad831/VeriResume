@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const FraudReportSchema = new mongoose.Schema(
+const AnomalyReportSchema = new mongoose.Schema(
   {
     resume: {
       type: mongoose.Schema.Types.ObjectId,
@@ -8,15 +8,29 @@ const FraudReportSchema = new mongoose.Schema(
       required: true,
     },
     reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    hr: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Legacy field
     
-    // Fraud analysis results
-    fraudScore: { type: Number, default: 0, min: 0, max: 100 }, // 0-100
-    authenticityScore: { type: Number }, // Legacy field (inverse of fraudScore)
+    // Anomaly analysis results
+    riskScore: { type: Number, default: 0, min: 0, max: 100 }, // 0-100
+    riskLevel: { 
+      type: String,
+      enum: ['Low', 'Medium', 'High'],
+      default: 'Low'
+    },
     
-    // Fraud indicators
-    indicators: [String], // List of fraud red flags
-    issues: [String], // Legacy field
+    // Anomaly indicators
+    indicators: [String], // List of anomaly red flags
+    
+    // Duplicate detection
+    duplicates: [
+      {
+        resumeId: String,
+        similarity: Number,
+        matchedFields: [String]
+      }
+    ],
+    
+    // Recommendations
+    recommendations: [String],
     
     // Status tracking
     status: {
@@ -42,8 +56,8 @@ const FraudReportSchema = new mongoose.Schema(
 );
 
 // Index for faster queries
-FraudReportSchema.index({ status: 1, priority: -1 });
-FraudReportSchema.index({ resume: 1 });
+AnomalyReportSchema.index({ status: 1, priority: -1 });
+AnomalyReportSchema.index({ resume: 1 });
 
-const FraudReport = mongoose.model("FraudReport", FraudReportSchema);
-export default FraudReport;
+const AnomalyReport = mongoose.model("AnomalyReport", AnomalyReportSchema);
+export default AnomalyReport;

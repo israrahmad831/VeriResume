@@ -3,6 +3,8 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import passport from "passport";
 import session from "express-session";
@@ -11,9 +13,15 @@ import authRoutes from "./routes/auth.js";
 import apiRoutes from "./routes/api.js";
 import User from "./models/User.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files (avatars, etc.)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 connectDB();
 

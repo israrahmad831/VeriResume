@@ -7,7 +7,7 @@ const AdminLogSchema = new mongoose.Schema(
     details: { type: Object },
     category: {
       type: String,
-      enum: ["system", "fraud", "subscription", "user"],
+      enum: ["system", "anomaly", "subscription", "user"],
     },
   },
   { timestamps: true }

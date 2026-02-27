@@ -7,14 +7,43 @@ import EmailVerification from "./pages/EmailVerification/EmailVerification";
 import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import JobSeekerDashboard from "./pages/JobSeekerDashboard/JobSeekerDashboard";
-import HRDashboard from "./pages/HRDashboard/HRDashboard";
+import HRDashboardNew from "./pages/HRDashboard/HRDashboardNew";
 import AdminDashboard from "./pages/AdminDashboard/AdminDashboard";
+import AdminUsers from "./pages/AdminDashboard/AdminUsers";
+import AdminJobs from "./pages/AdminDashboard/AdminJobs";
+import AdminAnomalies from "./pages/AdminDashboard/AdminAnomalies";
+import AdminAnalytics from "./pages/AdminDashboard/AdminAnalytics";
+import AdminPayments from "./pages/AdminDashboard/AdminPayments";
+import AdminPremium from "./pages/AdminDashboard/AdminPremium";
+import AdminReports from "./pages/AdminDashboard/AdminReports";
+import AdminSettings from "./pages/AdminDashboard/AdminSettings";
+import AdminLogs from "./pages/AdminDashboard/AdminLogs";
+import AIAnalyticsPage from "./pages/AIAnalytics/AIAnalytics";
+
+// Job Seeker Dashboard Pages
+import {
+  JobSeekerDashboard,
+  UploadResume,
+  AIAnalysis,
+  JobRecommendations,
+  EnhancedResume,
+  Notifications,
+  Premium,
+  ProfileSettings,
+  Reanalyze,
+  MyApplications,
+  ExploreCompanies,
+} from "./pages/JobSeekerDashboard";
 
 const App = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         {/* <Navbar /> */}
         <Routes>
           <Route
@@ -30,6 +59,8 @@ const App = () => {
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/success" element={<AuthSuccess />} />
+          
+          {/* Job Seeker Dashboard - Main */}
           <Route 
             path="/dashboardjob" 
             element={
@@ -39,18 +70,220 @@ const App = () => {
             } 
           />
           <Route 
-            path="/dashboardhr" 
+            path="/jobseeker/dashboard" 
             element={
-              <ProtectedRoute requiredRole="hr">
-                <HRDashboard />
+              <ProtectedRoute requiredRole="jobseeker">
+                <JobSeekerDashboard />
               </ProtectedRoute>
             } 
           />
+          
+          {/* Job Seeker - Upload Resume */}
+          <Route 
+            path="/jobseeker/upload" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <UploadResume />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - AI Analysis */}
+          <Route 
+            path="/jobseeker/analysis" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <AIAnalysis />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - AI Analytics (Legacy) */}
+          <Route 
+            path="/jobseeker/analytics" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <AIAnalyticsPage />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Job Recommendations */}
+          <Route 
+            path="/jobseeker/jobs" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <JobRecommendations />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Enhanced Resume */}
+          <Route 
+            path="/jobseeker/enhanced" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <EnhancedResume />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Notifications */}
+          <Route 
+            path="/jobseeker/notifications" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <Notifications />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Premium */}
+          <Route 
+            path="/jobseeker/premium" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <Premium />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Profile Settings */}
+          <Route 
+            path="/jobseeker/settings" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <ProfileSettings />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Reanalyze */}
+          <Route 
+            path="/jobseeker/reanalyze" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <Reanalyze />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - My Applications */}
+          <Route 
+            path="/jobseeker/applications" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <MyApplications />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Job Seeker - Explore Companies */}
+          <Route 
+            path="/jobseeker/companies" 
+            element={
+              <ProtectedRoute requiredRole="jobseeker">
+                <ExploreCompanies />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* HR Dashboard */}
+          <Route 
+            path="/dashboardhr" 
+            element={
+              <ProtectedRoute requiredRole="hr">
+                <HRDashboardNew />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin Dashboard */}
           <Route 
             path="/dashboardadmin" 
             element={
               <ProtectedRoute requiredRole="admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/users" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminUsers />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/jobs" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminJobs />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/anomalies" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminAnomalies />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/analytics" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminAnalytics />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/payments" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPayments />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/premium" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminPremium />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/reports" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminReports />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/settings" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminSettings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/logs" 
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLogs />
               </ProtectedRoute>
             } 
           />

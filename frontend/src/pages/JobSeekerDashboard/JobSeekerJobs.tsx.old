@@ -1,0 +1,1021 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import DashboardLayout from "./DashboardLayout";
+import axios from "axios";
+import {
+  Briefcase,
+  MapPin,
+  DollarSign,
+  Bookmark,
+  BookmarkCheck,
+  Loader,
+  AlertCircle,
+  ExternalLink,
+  Filter,
+  Search,
+  FileText,
+  Upload,
+  RefreshCw,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  Brain,
+  ChevronDown,
+  ChevronUp,
+  Globe,
+  Sparkles,
+  Tag,
+  Clock,
+  Building2,
+  ArrowRight,
+} from "lucide-react";
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:3000";
+
+interface Job {
+  id?: string;
+  _id?: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  url: string;
+  source?: string;
+  platform?: string;
+  posted_date?: string;
+  postedDate?: string;
+  salary?: string;
+  job_type?: string;
+  matchScore?: number;
+  matchPercentage?: number;
+  match_score?: number;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  skillScore?: number;
+  semanticScore?: number;
+  titleScore?: number;
+  experienceScore?: number;
+  easyApply?: boolean;
+  keywords?: string[];
+  category?: string;
+  department?: string;
+}
+
+const JobSeekerJobs = () => {
+  const navigate = useNavigate();
+
+  // Resume state
+  const [hasResume, setHasResume] = useState(false);
+  const [resumeData, setResumeData] = useState<any>(null);
+  const [recommendedKeywords, setRecommendedKeywords] = useState<string[]>([]);
+
+  // Job state
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState("");
+  const [savedJobs, setSavedJobs] = useState<string[]>([]);
+
+  // Search & filter state
+  const [searchMode, setSearchMode] = useState<"recommended" | "custom">(
+    "recommended"
+  );
+  const [selectedKeyword, setSelectedKeyword] = useState("");
+  const [customJobTitle, setCustomJobTitle] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"match" | "recent">("match");
+  const [expandedJob, setExpandedJob] = useState<string | null>(null);
+
+  // Stats
+  const [searchStats, setSearchStats] = useState<any>(null);
+
+  const platforms = ["all", "Remotive", "TheMuse", "Arbeitnow", "USAJobs", "Rozee"];
+
+  useEffect(() => {
+    fetchResumeData();
+  }, []);
+
+  useEffect(() => {
+    filterJobs();
+  }, [jobs, searchTerm, platformFilter, sortBy]);
+
+  // ═══════════════════════════════════════════════
+  // Fetch resume data and extract keywords
+  // ═══════════════════════════════════════════════
+  const fetchResumeData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`${API_URL}/api/jobseeker/my-resumes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success && response.data.data?.resumes?.length > 0) {
+        const resume = response.data.data.resumes[0];
+        setResumeData(resume);
+        setHasResume(true);
+
+        // Extract skills/keywords
+        const skills = resume.parsedData?.skills || [];
+
+        // Build recommended keywords from skills + AI analysis
+        const aiKeywords =
+          resume.aiAnalysis?.recommendedKeywords ||
+          resume.completeAnalysis?.recommended_keywords ||
+          [];
+        const techSkills =
+          resume.aiAnalysis?.techSkills ||
+          resume.completeAnalysis?.tech_skills ||
+          [];
+        const matchedSkills =
+          resume.aiAnalysis?.matchedSkills ||
+          resume.completeAnalysis?.matchedSkills ||
+          [];
+
+        // Combine and deduplicate keywords
+        const allKeywords = [
+          ...new Set([
+            ...(resume.jobTarget ? [resume.jobTarget] : []),
+            ...skills,
+            ...aiKeywords,
+            ...techSkills,
+            ...matchedSkills,
+          ]),
+        ].filter(
+          (k) => k && typeof k === "string" && k.length > 1 && k.length < 50
+        );
+        setRecommendedKeywords(allKeywords);
+
+        // ── Check for pre-selected keywords from the Upload page ──
+        const preSelectedRaw = localStorage.getItem("veriresume_selected_keywords");
+        if (preSelectedRaw) {
+          try {
+            const keywords: string[] = JSON.parse(preSelectedRaw);
+            localStorage.removeItem("veriresume_selected_keywords");
+            localStorage.removeItem("veriresume_search_resumeid");
+            if (keywords.length > 0) {
+              // Use all selected keywords joined as one query for better results
+              const combinedQuery = keywords.slice(0, 5).join(" ");
+              setSelectedKeyword(keywords[0]);
+              setCustomJobTitle(combinedQuery);
+              await searchJobsFromAPIs(combinedQuery, "", resume._id);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        // Check for cached jobs
+        const cachedJobs = localStorage.getItem("veriresume_cached_jobs");
+        const cachedTimestamp = localStorage.getItem(
+          "veriresume_jobs_timestamp"
+        );
+        const cacheAge = cachedTimestamp
+          ? Date.now() - parseInt(cachedTimestamp)
+          : Infinity;
+
+        if (cachedJobs && cacheAge < 15 * 60 * 1000) {
+          try {
+            const parsed = JSON.parse(cachedJobs);
+            if (parsed.length > 0) {
+              setJobs(parsed);
+              return;
+            }
+          } catch (e) {}
+        }
+
+        // Auto-search with resume target role
+        if (resume.jobTarget) {
+          setSelectedKeyword(resume.jobTarget);
+          await searchJobsFromAPIs(resume.jobTarget, "", resume._id);
+        }
+      } else {
+        setHasResume(false);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch resume:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ═══════════════════════════════════════════════
+  // Search jobs from APIs (Remotive + Jobicy + Arbeitnow + USAJobs)
+  // ═══════════════════════════════════════════════
+  const searchJobsFromAPIs = async (
+    query: string,
+    location: string = "",
+    resumeId?: string
+  ) => {
+    if (!query.trim()) {
+      setError("Please enter a job title or select a keyword");
+      return;
+    }
+    setSearching(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${API_URL}/api/jobseeker/search-jobs-api`,
+        {
+          query: query.trim(),
+          location: location.trim() || undefined,
+          resumeId: resumeId || resumeData?._id,
+          max_per_platform: 10,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 45000,
+        }
+      );
+
+      if (response.data.success) {
+        const allJobs = response.data.data?.jobs || [];
+        setJobs(allJobs);
+        setSearchStats(response.data.data?.statistics || null);
+        // Cache results
+        localStorage.setItem(
+          "veriresume_cached_jobs",
+          JSON.stringify(allJobs)
+        );
+        localStorage.setItem(
+          "veriresume_jobs_timestamp",
+          Date.now().toString()
+        );
+      } else {
+        setError(response.data.error || "Search failed");
+      }
+    } catch (err: any) {
+      console.error("Job search error:", err);
+      setError(
+        err.response?.data?.error ||
+          "Failed to search jobs. Please try again."
+      );
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // ═══════════════════════════════════════════════
+  // Handle keyword selection (from recommended)
+  // ═══════════════════════════════════════════════
+  const handleKeywordSelect = (keyword: string) => {
+    setSelectedKeyword(keyword);
+    setSearchMode("recommended");
+    searchJobsFromAPIs(keyword, customLocation);
+  };
+
+  // ═══════════════════════════════════════════════
+  // Handle custom search
+  // ═══════════════════════════════════════════════
+  const handleCustomSearch = () => {
+    setSearchMode("custom");
+    setSelectedKeyword("");
+    searchJobsFromAPIs(customJobTitle, customLocation);
+  };
+
+  // ═══════════════════════════════════════════════
+  // Filter + Sort jobs
+  // ═══════════════════════════════════════════════
+  const filterJobs = () => {
+    let filtered = jobs;
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (job) =>
+          job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.location?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (platformFilter !== "all") {
+      filtered = filtered.filter((job) =>
+        (job.source || job.platform || "")
+          .toLowerCase()
+          .includes(platformFilter.toLowerCase())
+      );
+    }
+    filtered.sort((a, b) => {
+      if (sortBy === "match") {
+        return (
+          (b.matchScore || b.matchPercentage || 0) -
+          (a.matchScore || a.matchPercentage || 0)
+        );
+      }
+      return 0;
+    });
+    setFilteredJobs(filtered);
+  };
+
+  const toggleSaveJob = (jobId: string) => {
+    setSavedJobs((prev) =>
+      prev.includes(jobId)
+        ? prev.filter((id) => id !== jobId)
+        : [...prev, jobId]
+    );
+  };
+
+  const getPlatformBadge = (platform: string) => {
+    const colors: Record<string, string> = {
+      findwork: "bg-indigo-100 text-indigo-700 border-indigo-200",
+      adzuna: "bg-emerald-100 text-emerald-700 border-emerald-200",
+      remotive: "bg-indigo-100 text-indigo-700 border-indigo-200",
+      themuse: "bg-pink-100 text-pink-700 border-pink-200",
+      arbeitnow: "bg-violet-100 text-violet-700 border-violet-200",
+      usajobs: "bg-blue-100 text-blue-700 border-blue-200",
+      indeed: "bg-sky-100 text-sky-700 border-sky-200",
+      rozee: "bg-green-100 text-green-700 border-green-200",
+    };
+    return (
+      colors[platform?.toLowerCase()] ||
+      "bg-slate-100 text-slate-700 border-slate-200"
+    );
+  };
+
+  const getMatchColor = (score: number) => {
+    if (score >= 75) return "text-green-600 bg-green-50 border-green-200";
+    if (score >= 50) return "text-amber-600 bg-amber-50 border-amber-200";
+    return "text-red-600 bg-red-50 border-red-200";
+  };
+
+  const getMatchLabel = (score: number) => {
+    if (score >= 85) return "Excellent Match";
+    if (score >= 70) return "Strong Match";
+    if (score >= 50) return "Good Match";
+    if (score >= 35) return "Partial Match";
+    return "Low Match";
+  };
+
+  // ═══════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════
+  if (loading) {
+    return (
+      <DashboardLayout
+        title="Job Recommendations"
+        subtitle="AI-powered job matching"
+      >
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <Loader className="w-12 h-12 animate-spin text-cyan-600 mx-auto mb-4" />
+            <p className="text-slate-600">Loading your resume data...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout
+      title="Job Recommendations"
+      subtitle="Search real jobs from Remotive, TheMuse, Arbeitnow & USAJobs"
+    >
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center text-red-700">
+          <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+          {error}
+          <button
+            onClick={() => setError("")}
+            className="ml-auto text-red-500 hover:text-red-700 font-bold"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* ═══ NO RESUME STATE ═══ */}
+      {!hasResume ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-slate-200">
+          <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">
+            No Resume Uploaded
+          </h3>
+          <p className="text-slate-600 mb-6">
+            Upload your resume first to get AI-powered ATS analysis and
+            personalized job recommendations
+          </p>
+          <button
+            onClick={() => navigate("/jobseeker/upload")}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold flex items-center gap-2 mx-auto"
+          >
+            <Upload size={20} /> Upload Resume
+          </button>
+        </div>
+      ) : (
+        <>
+          {/* ═══ RESUME ANALYSIS SUMMARY BANNER ═══ */}
+          <div className="bg-gradient-to-r from-slate-900 to-blue-900 rounded-2xl p-6 text-white mb-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold flex items-center gap-2 mb-3">
+                  <Brain size={22} className="text-cyan-400" /> Resume Analysis
+                  Summary
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-bold text-cyan-300">
+                      {resumeData?.aiAnalysis?.atsScore ||
+                        resumeData?.completeAnalysis?.ats_score ||
+                        "--"}
+                      %
+                    </p>
+                    <p className="text-xs text-blue-200 mt-1">ATS Score</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-bold text-green-300">
+                      {resumeData?.aiAnalysis?.grammarScore ||
+                        resumeData?.completeAnalysis?.grammar_score ||
+                        "--"}
+                      %
+                    </p>
+                    <p className="text-xs text-blue-200 mt-1">Grammar</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-bold text-purple-300">
+                      {resumeData?.aiAnalysis?.readability ||
+                        resumeData?.completeAnalysis?.readability_score ||
+                        "--"}
+                      %
+                    </p>
+                    <p className="text-xs text-blue-200 mt-1">Readability</p>
+                  </div>
+                  <div className="bg-white/10 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-300">
+                      {resumeData?.aiAnalysis?.structureScore ||
+                        resumeData?.completeAnalysis?.structure_score ||
+                        "--"}
+                      %
+                    </p>
+                    <p className="text-xs text-blue-200 mt-1">Structure</p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate("/jobseeker/analysis")}
+                className="ml-4 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold transition-all flex items-center gap-1 whitespace-nowrap"
+              >
+                Full Analysis <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+
+          {/* ═══ RECOMMENDED KEYWORDS FROM RESUME ═══ */}
+          {recommendedKeywords.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
+              <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                <Sparkles size={16} className="text-cyan-600" />
+                Recommended Job Searches (from your resume)
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">
+                Click any keyword to search real jobs from Remotive, TheMuse &
+                USAJobs
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {recommendedKeywords.slice(0, 20).map((keyword, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleKeywordSelect(keyword)}
+                    disabled={searching}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all ${
+                      selectedKeyword === keyword
+                        ? "bg-cyan-600 text-white border-cyan-600 shadow-md"
+                        : "bg-white text-slate-700 border-slate-300 hover:border-cyan-400 hover:bg-cyan-50"
+                    } disabled:opacity-50`}
+                  >
+                    <Tag size={12} className="inline mr-1.5" />
+                    {keyword}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ═══ SEARCH OPTIONS: RECOMMENDED vs CUSTOM ═══ */}
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
+            {/* Mode Tabs */}
+            <div className="flex gap-2 mb-5">
+              <button
+                onClick={() => setSearchMode("recommended")}
+                className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                  searchMode === "recommended"
+                    ? "bg-cyan-600 text-white shadow-md"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <Sparkles size={16} />
+                Resume-Based Search
+              </button>
+              <button
+                onClick={() => setSearchMode("custom")}
+                className={`flex-1 py-3 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
+                  searchMode === "custom"
+                    ? "bg-cyan-600 text-white shadow-md"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                <Search size={16} />
+                Custom Job Search
+              </button>
+            </div>
+
+            {/* Custom Search Form */}
+            {searchMode === "custom" && (
+              <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Briefcase
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Job title (e.g. Python Developer, Data Analyst)"
+                      value={customJobTitle}
+                      onChange={(e) => setCustomJobTitle(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleCustomSearch()
+                      }
+                      className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                    />
+                  </div>
+                  <div className="relative">
+                    <MapPin
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Location (e.g. Remote, London, New York)"
+                      value={customLocation}
+                      onChange={(e) => setCustomLocation(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleCustomSearch()
+                      }
+                      className="w-full pl-11 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={handleCustomSearch}
+                  disabled={searching || !customJobTitle.trim()}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 text-sm"
+                >
+                  {searching ? (
+                    <Loader className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  {searching
+                    ? "Searching APIs..."
+                    : "Search Remotive + TheMuse + Arbeitnow + USAJobs"}
+                </button>
+              </div>
+            )}
+
+            {/* Recommended mode info */}
+            {searchMode === "recommended" && (
+              <p className="text-sm text-slate-500 flex items-center gap-2">
+                <Brain size={16} className="text-cyan-600" />
+                {selectedKeyword
+                  ? `Showing jobs for "${selectedKeyword}" - click another keyword above to change`
+                  : "Select a keyword above to search for matching jobs"}
+              </p>
+            )}
+          </div>
+
+          {/* ═══ SEARCH STATS ═══ */}
+          {searchStats && jobs.length > 0 && (
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-2xl p-4 border border-cyan-200 mb-6">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Globe size={16} className="text-cyan-600" />
+                    <span className="text-sm font-semibold text-slate-700">
+                      {searchStats.total_jobs || jobs.length} jobs from{" "}
+                      {searchStats.platforms_searched?.length || 3} platforms
+                    </span>
+                  </div>
+                  {searchStats.jobs_per_platform && (
+                    <div className="flex gap-3 text-xs text-slate-600">
+                      {Object.entries(searchStats.jobs_per_platform).map(
+                        ([platform, count]: [string, any]) => (
+                          <span
+                            key={platform}
+                            className="px-2 py-1 bg-white rounded-full border border-slate-200"
+                          >
+                            {platform === "usajobs"
+                              ? "USAJobs"
+                              : platform.charAt(0).toUpperCase() +
+                                platform.slice(1)}
+                            : <strong>{count}</strong>
+                          </span>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() =>
+                    searchJobsFromAPIs(
+                      selectedKeyword || customJobTitle || "Developer",
+                      customLocation
+                    )
+                  }
+                  disabled={searching}
+                  className="flex items-center gap-1 text-sm text-cyan-700 hover:text-cyan-900 font-semibold disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={`w-3 h-3 ${searching ? "animate-spin" : ""}`}
+                  />
+                  Refresh
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ═══ FILTER BAR ═══ */}
+          {jobs.length > 0 && (
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 mb-6">
+              <div className="grid md:grid-cols-4 gap-3">
+                <div className="relative md:col-span-2">
+                  <Search
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Filter by title, company, or location..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-11 pr-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter
+                    className="text-slate-400 flex-shrink-0"
+                    size={18}
+                  />
+                  <select
+                    value={platformFilter}
+                    onChange={(e) => setPlatformFilter(e.target.value)}
+                    className="flex-1 px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                  >
+                    {platforms.map((p) => (
+                      <option key={p} value={p}>
+                        {p === "all" ? "All Platforms" : p}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp
+                    className="text-slate-400 flex-shrink-0"
+                    size={18}
+                  />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="flex-1 px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
+                  >
+                    <option value="match">Best Match</option>
+                    <option value="recent">Most Recent</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 mt-3">
+                Showing{" "}
+                <span className="font-bold text-slate-700">
+                  {filteredJobs.length}
+                </span>{" "}
+                of {jobs.length} jobs
+              </p>
+            </div>
+          )}
+
+          {/* ═══ SEARCHING STATE ═══ */}
+          {searching && (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="relative mx-auto mb-4">
+                  <Loader
+                    className="animate-spin text-cyan-600 mx-auto"
+                    size={48}
+                  />
+                </div>
+                <p className="text-slate-700 font-semibold text-lg">
+                  Searching real jobs...
+                </p>
+                <p className="text-slate-500 text-sm mt-2">
+                  Querying Remotive, TheMuse, Arbeitnow & USAJobs APIs
+                </p>
+                <div className="flex justify-center gap-3 mt-4">
+                  {["Remotive", "TheMuse", "Arbeitnow", "USAJobs"].map((name) => (
+                    <span
+                      key={name}
+                      className="px-3 py-1 bg-white rounded-full border border-slate-200 text-xs font-semibold text-slate-600 animate-pulse"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══ NO JOBS ═══ */}
+          {!searching && jobs.length === 0 && hasResume && (
+            <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
+              <Briefcase className="mx-auto text-slate-300" size={56} />
+              <p className="text-slate-700 text-lg mt-4 font-semibold">
+                No jobs loaded yet
+              </p>
+              <p className="text-slate-500 mt-2 max-w-md mx-auto">
+                Select a recommended keyword above or use custom search to find
+                jobs from Remotive, TheMuse, Arbeitnow & USAJobs
+              </p>
+            </div>
+          )}
+
+          {/* ═══ JOB CARDS ═══ */}
+          {!searching && filteredJobs.length > 0 && (
+            <div className="space-y-4">
+              {filteredJobs.map((job, idx) => {
+                const matchScore =
+                  job.matchScore || job.matchPercentage || job.match_score || 0;
+                const jobId = job._id || job.id || `job-${idx}`;
+                const isExpanded = expandedJob === jobId;
+                const platform = (
+                  job.source ||
+                  job.platform ||
+                  "unknown"
+                ).toLowerCase();
+                const platformLabel =
+                  platform === "usajobs"
+                    ? "USAJobs"
+                    : platform.charAt(0).toUpperCase() + platform.slice(1);
+                const postedDate = job.posted_date || job.postedDate || "";
+
+                return (
+                  <div
+                    key={jobId}
+                    className="bg-white rounded-2xl border border-slate-200 hover:border-cyan-300 hover:shadow-lg transition-all overflow-hidden"
+                  >
+                    <div className="p-6">
+                      {/* Top Row */}
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="text-lg font-bold text-slate-900">
+                              {job.title}
+                            </h3>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${getPlatformBadge(
+                                platform
+                              )}`}
+                            >
+                              {platformLabel}
+                            </span>
+                            {job.job_type && (
+                              <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
+                                {job.job_type}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-600">
+                            <span className="flex items-center gap-1">
+                              <Building2 size={14} className="text-slate-400" />
+                              {job.company}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Match Score */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {matchScore > 0 && (
+                            <div
+                              className={`relative w-14 h-14 rounded-full flex items-center justify-center border-[3px] ${
+                                matchScore >= 75
+                                  ? "border-green-400 bg-green-50"
+                                  : matchScore >= 50
+                                  ? "border-amber-400 bg-amber-50"
+                                  : "border-slate-300 bg-slate-50"
+                              }`}
+                            >
+                              <p
+                                className={`text-sm font-bold ${
+                                  matchScore >= 75
+                                    ? "text-green-700"
+                                    : matchScore >= 50
+                                    ? "text-amber-700"
+                                    : "text-slate-600"
+                                }`}
+                              >
+                                {Math.round(matchScore)}%
+                              </p>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => toggleSaveJob(jobId)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-all"
+                          >
+                            {savedJobs.includes(jobId) ? (
+                              <BookmarkCheck
+                                className="text-cyan-600 fill-current"
+                                size={18}
+                              />
+                            ) : (
+                              <Bookmark className="text-slate-400" size={18} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Details Row */}
+                      <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 mb-3">
+                        {job.location && (
+                          <span className="flex items-center gap-1">
+                            <MapPin size={13} className="text-slate-400" />
+                            {job.location}
+                          </span>
+                        )}
+                        {job.salary && (
+                          <span className="flex items-center gap-1 text-green-700 font-semibold">
+                            <DollarSign size={13} className="text-green-500" />
+                            {job.salary}
+                          </span>
+                        )}
+                        {postedDate && (
+                          <span className="flex items-center gap-1 text-slate-400">
+                            <Clock size={13} />
+                            {postedDate}
+                          </span>
+                        )}
+                        {matchScore > 0 && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getMatchColor(
+                              matchScore
+                            )}`}
+                          >
+                            {getMatchLabel(matchScore)}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Matched Skills */}
+                      {job.matchedSkills && job.matchedSkills.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1.5">
+                            {job.matchedSkills
+                              .slice(0, 8)
+                              .map((skill: string, i: number) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold border border-green-200"
+                                >
+                                  <CheckCircle size={10} /> {skill}
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Keywords (for FindWork) */}
+                      {!isExpanded &&
+                        job.keywords &&
+                        job.keywords.length > 0 &&
+                        !job.matchedSkills?.length && (
+                          <div className="mb-3">
+                            <div className="flex flex-wrap gap-1.5">
+                              {job.keywords
+                                .slice(0, 6)
+                                .map((kw: string, i: number) => (
+                                  <span
+                                    key={i}
+                                    className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium border border-indigo-100"
+                                  >
+                                    {kw}
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Expanded Content */}
+                      {isExpanded && (
+                        <>
+                          {/* Missing Skills */}
+                          {job.missingSkills &&
+                            job.missingSkills.length > 0 && (
+                              <div className="mb-3">
+                                <p className="text-xs font-semibold text-slate-500 mb-1.5 uppercase">
+                                  Skills to Develop
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {job.missingSkills
+                                    .slice(0, 8)
+                                    .map((skill: string, i: number) => (
+                                      <span
+                                        key={i}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold border border-red-200"
+                                      >
+                                        <XCircle size={10} /> {skill}
+                                      </span>
+                                    ))}
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Description */}
+                          {job.description && (
+                            <div className="mb-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                              <p className="text-sm text-slate-700 leading-relaxed">
+                                {job.description}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Category / Department */}
+                          {(job.category || job.department) && (
+                            <div className="flex gap-3 mb-3 text-xs text-slate-500">
+                              {job.category && (
+                                <span>
+                                  Category:{" "}
+                                  <strong className="text-slate-700">
+                                    {job.category}
+                                  </strong>
+                                </span>
+                              )}
+                              {job.department && (
+                                <span>
+                                  Department:{" "}
+                                  <strong className="text-slate-700">
+                                    {job.department}
+                                  </strong>
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-3 mt-3">
+                        <a
+                          href={job.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all text-sm"
+                        >
+                          <ExternalLink size={15} />
+                          View & Apply on {platformLabel}
+                        </a>
+                        <button
+                          onClick={() =>
+                            setExpandedJob(isExpanded ? null : jobId)
+                          }
+                          className="px-4 py-2.5 border border-slate-300 text-slate-600 rounded-xl hover:bg-slate-50 transition-all text-sm font-semibold flex items-center gap-1"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp size={15} />
+                          ) : (
+                            <ChevronDown size={15} />
+                          )}
+                          {isExpanded ? "Less" : "Details"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ═══ NO FILTERED RESULTS ═══ */}
+          {!searching &&
+            jobs.length > 0 &&
+            filteredJobs.length === 0 &&
+            searchTerm && (
+              <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+                <Filter className="mx-auto text-slate-300" size={48} />
+                <p className="text-slate-600 mt-3 font-medium">
+                  No jobs match your filter "{searchTerm}"
+                </p>
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="mt-3 text-cyan-600 hover:text-cyan-700 font-semibold text-sm"
+                >
+                  Clear filter
+                </button>
+              </div>
+            )}
+        </>
+      )}
+    </DashboardLayout>
+  );
+};
+
+export default JobSeekerJobs;

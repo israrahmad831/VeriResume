@@ -88,19 +88,6 @@ const Home = () => {
                 opportunities.
               </p>
               <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => navigate("/signup")}
-                  className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg shadow-cyan-500/50"
-                >
-                  Get Started
-                </button>
-                <button
-                  onClick={() => navigate("/login")}
-                  className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all border border-white/30 flex items-center gap-2"
-                >
-                  <Play size={20} />
-                  Watch Demo
-                </button>
               </div>
             </div>
 
@@ -165,7 +152,7 @@ const Home = () => {
               },
               {
                 icon: Shield,
-                title: "Fraud Detection for HRs",
+                title: "Anomaly Detection for HRs",
                 desc: "Detect fake or copied resumes instantly using AI authenticity checks.",
                 color: "bg-cyan-600",
               },
@@ -187,11 +174,7 @@ const Home = () => {
             ))}
           </div>
 
-          <div className="text-center mt-12">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold transition-all inline-flex items-center gap-2">
-              Explore All Features <ArrowRight size={20} />
-            </button>
-          </div>
+
         </div>
       </section>
 
@@ -276,9 +259,6 @@ const Home = () => {
                   </div>
                 ))}
               </div>
-              <button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg">
-                Start Free Analysis
-              </button>
             </div>
 
             <div className="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-8 border-2 border-blue-200">
@@ -368,7 +348,7 @@ const Home = () => {
               <div className="space-y-4">
                 {[
                   "Upload job description and get ranked candidates instantly",
-                  "Detect fraudulent or copied resumes automatically",
+                  "Detect anomalies or copied resumes automatically",
                   "Compare candidates based on real skill matches",
                 ].map((point, idx) => (
                   <div key={idx} className="flex items-start gap-3">
@@ -380,9 +360,6 @@ const Home = () => {
                   </div>
                 ))}
               </div>
-              <button className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg">
-                Post a Job
-              </button>
             </div>
           </div>
         </div>
@@ -423,7 +400,7 @@ const Home = () => {
               {
                 icon: Shield,
                 title: "Authenticity Detection",
-                desc: "AI-powered fraud and plagiarism detection",
+                desc: "AI-powered anomaly and plagiarism detection",
               },
             ].map((item, idx) => (
               <div
@@ -546,9 +523,6 @@ const Home = () => {
                   </li>
                 ))}
               </ul>
-              <button className="w-full bg-slate-200 hover:bg-slate-300 text-slate-900 py-3 rounded-xl font-semibold transition-all">
-                Start Free
-              </button>
             </div>
 
             <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-2xl p-8 text-white border-2 border-cyan-400 shadow-2xl transform md:scale-105">
@@ -565,7 +539,7 @@ const Home = () => {
                   "Download optimized resume",
                   "Priority analysis",
                   "Unlimited job matches",
-                  "Fraud detection access",
+                  "Anomaly detection access",
                 ].map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2">
                     <CheckCircle className="text-cyan-300" size={20} />
@@ -573,9 +547,6 @@ const Home = () => {
                   </li>
                 ))}
               </ul>
-              <button className="w-full bg-white text-blue-600 hover:bg-blue-50 py-3 rounded-xl font-semibold transition-all">
-                Upgrade to Premium
-              </button>
             </div>
           </div>
         </div>
@@ -591,12 +562,6 @@ const Home = () => {
             Join thousands of professionals optimizing their careers with AI.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-lg">
-              Get Started
-            </button>
-            <button className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all border border-white/30">
-              Post a Job
-            </button>
           </div>
         </div>
       </section>
